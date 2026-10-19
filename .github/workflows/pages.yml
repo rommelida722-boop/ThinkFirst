@@ -1,8 +1,14 @@
 name: Deploy MVP prototype to GitHub Pages
 
+# 把 mvp/ 目录作为一个纯静态站点发布到 GitHub Pages。
+# 只要 mvp/ 有改动就会自动重新部署。
+
 on:
   push:
     branches: [main]
+    paths:
+      - 'mvp/**'
+      - '.github/workflows/pages.yml'
   workflow_dispatch:
 
 permissions:
