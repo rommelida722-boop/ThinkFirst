@@ -2,66 +2,78 @@
 
 > 动手之前，先想清楚。
 
-ThinkFirst 是一个**纯静态网页工具**：用 4 个阶段、12 个问题，引导你把一个模糊的点子变成一份可以直接交给 AI 或团队的需求分析文档。不用注册、不上传数据，边填边实时生成文档。
+![ThinkFirst 项目界面示意](docs/images/thinkfirst-overview.svg)
 
-**在线体验：<https://lumiray92.github.io/think-first/>**
+ThinkFirst 是一个通过 Agent 对话梳理需求的 Web 项目。用户选择卡片或填写回答，逐步明确目标用户、问题、功能范围、风险与验收条件，最后生成可预览、修改和导出的需求文档（PRD）。上图为功能界面示意，并非运行截图。
 
-## 它解决什么问题
+## 可以做什么
 
-很多人做项目时，会直接对 AI 说「帮我写份需求文档」，然后照着那份看起来很专业的文档开工；两三周后才发现方向从一开始就错了。
+- **两种引导方式**：快速梳理按 5 组推进；逐步深入按 12 步展开。可以回退修改，不能向前跳过。
+- **动态选项与编辑**：结合用户回答生成候选，确认卡可直接编辑；点击紫色小人可对照文档预览优化章节。
+- **多厂商模型**：支持 DeepSeek 和通义千问北京、新加坡入口，密钥按账号加密保存；已配置接口可作为备用。
+- **历史恢复**：会话、回答和文档版本保存到数据库，未完成或已完成的对话都可以继续。
+- **文档交付**：支持轻度润色后导出 Markdown，也能调整为公司详细版、Codex 或 Claude Code 开发提示词。
+- **安全与容错**：密码哈希、API Key 加密、接口鉴权、请求限流、超时与模型返回格式校验。
 
-ThinkFirst 不替你写答案，只在你写第一行代码之前，逼你把「给谁、解决什么问题、最可能怎么失败、第一版只做什么」想一遍。
+## 技术结构
 
-## MVP 已实现
+| 部分 | 技术与职责 |
+|---|---|
+| 前端 | Vue 3、Vite、Vue Router：卡片交互、历史记录和文档预览 |
+| 后端 | Java 17、Spring Boot 3：认证、会话流程、模型调用和导出 |
+| 数据库 | 本地默认 H2 文件数据库；生产配置支持 MySQL |
+| 模型接入 | OpenAI 兼容接口、按用户密钥调用、可用接口切换 |
+| 知识检索 | 中文关键词与向量混合检索，辅助需求引导 |
 
-- **分阶段引导**：定盘子 → JTBD → Pre-mortem → 功能自检，4 个阶段、12 个问题
-- **每个字段都有引导层**：为什么问这个、填错的典型样子、一个填对的例子
-- **实时文档预览**：右侧边填边生成，完成后可复制为 AI Prompt 或导出 Markdown
-- **本地自动保存**：草稿存在浏览器 localStorage，刷新不丢
-
-## 项目结构
-
-```
-think-first/
-├── README.md                   # 项目简介与架构
+```text
+ThinkFirst/
+├── app/                  # 前端与检索语料
+├── server/               # 后端、数据库和测试
 ├── docs/
-│   └── 需求前分析.md            # JTBD、Pre-mortem 与 MVP 方案
-├── mvp/
-│   ├── README.md               # MVP 体验指南
-│   ├── index.html              # 落地页：失败案例与价值说明
-│   ├── guide.html              # 工作台：引导表单 + 实时文档预览
-│   ├── done.html               # 完成页：导出、复制与自检
-│   ├── shared.js               # 问题数据、阶段定义、文档与 Prompt 生成
-│   └── styles.css              # 样式
-└── .github/
-    └── workflows/pages.yml     # GitHub Pages 自动部署
+│   ├── images/           # README 项目图片
+│   └── teaching/         # 项目解析教学文档入口
+└── README.md
 ```
-
-## 项目架构
-
-**纯静态、零依赖、无需构建。**
-
-- **页面流**：`index.html`（价值说明）→ `guide.html`（引导填写）→ `done.html`（导出与自检）
-- **数据驱动**：所有问题、阶段和文档模板集中在 `shared.js` 的 `Q` / `STAGES` 中；新增阶段只需加数据，不改页面结构
-- **状态管理**：答案写入浏览器 `localStorage`，页面之间共享；没有后端和账号体系
-- **文档生成**：前端实时把答案渲染为 Markdown 预览，并生成带硬性约束的 AI Prompt
-- **部署**：GitHub Actions 将 `mvp/` 目录发布到 GitHub Pages
 
 ## 本地运行
 
+需要 Node.js 20+、Java 17 和 Maven。以下命令分别在两个终端运行。
+
 ```bash
-cd mvp
-python -m http.server 8000
-# 打开 http://localhost:8000/
+cd server
+mvn spring-boot:run
 ```
 
-也可以直接双击 `mvp/index.html` 打开（复制功能在 `file://` 下有降级处理）。
+```bash
+cd app
+npm install
+npm run dev
+```
 
-## 文档
+访问 `http://localhost:5173/ThinkFirst/`，注册后在设置里选择厂商并填写对应 API Key。千问密钥需与选择的地域一致。实际模型调用由相应厂商计费。
 
-- [需求前分析：JTBD / Pre-mortem / MVP 方案](docs/需求前分析.md)
-- [MVP 体验指南](mvp/README.md)
+## 构建与测试
 
-## 项目状态
+```bash
+cd server
+mvn test
+mvn package
+```
 
-当前处于 **MVP 验证阶段**，只做 P0 功能：分阶段引导、字段引导层、实时预览与导出。账号体系、Agent 引导、多人协作等均刻意不做，取舍理由见[需求前分析](docs/需求前分析.md)中的「不做清单」。
+```bash
+cd app
+npm run build
+```
+
+## 项目解析与教学
+
+后续教学将从前端交互、接口请求、状态推进、模型调用、持久化、安全和部署逐步拆解，适合有基础语法知识的初学者。章节规划见 [教学文档入口](docs/teaching/README.md)。
+
+相关说明：[后端运行与部署](server/README.md) · [项目架构](docs/architecture.md) · [模型与导出配置](docs/模型与导出配置.md)。
+
+## 部署注意
+
+- 云端需要同时部署前端和后端；只更新网页不能获得新的模型接口。
+- 生产环境使用 HTTPS，并配置独立的 `TF_JWT_SECRET` 和 `TF_MASTER_KEY`。加密主密钥必须与数据库一起妥善备份，不可随意更换。
+- 不要提交真实密码、API Key、服务器凭据、数据库、日志或本地部署文件。
+- 模型结果需要用户确认，系统不会把 AI 推测视为已完成的用户调研。

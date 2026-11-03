@@ -1,0 +1,8 @@
+node_modules
+dist
+dist-ssr
+*.local
+.DS_Store
+
+# 42MB 的 JSONL 向量是构建产物，用 embeddings.f32 提交/部署
+rag/course07/embeddings.jsonl
